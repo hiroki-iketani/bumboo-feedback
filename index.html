@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>商談フィードバック提出</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --accent:#0f6a5c; --accent-ink:#ffffff; --line:#d7dee5;
+    --error:#c0392b; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    font-size:16px;line-height:1.6;}
+  .wrap{max-width:560px;margin:0 auto;padding:20px 16px 40px;}
+  h1{font-size:22px;margin:8px 0 4px;}
+  .lead{color:var(--sub);font-size:14px;margin:0 0 20px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 16px;}
+  .field{margin-bottom:18px;}
+  label{display:block;font-weight:600;margin-bottom:6px;}
+  .req{color:var(--error);font-size:13px;margin-left:4px;}
+  .opt{color:var(--sub);font-size:13px;margin-left:4px;}
+  input[type="text"],input[type="url"],input[type="date"],select,textarea{
+    width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;
+    font-size:16px;background:#fff;color:var(--ink);}
+  .time-row{display:flex;gap:8px;align-items:center;margin-top:8px;}
+  .time-row select{flex:1;}
+  .time-row span{color:var(--sub);font-size:14px;}
+  textarea{min-height:220px;resize:vertical;}
+  .counter{text-align:right;font-size:13px;color:var(--sub);margin-top:4px;}
+  .counter.over{color:var(--error);font-weight:700;}
+  .error-msg{display:none;color:var(--error);font-size:13px;margin-top:4px;}
+  .field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--error);}
+  .field.invalid .error-msg{display:block;}
+  button{width:100%;min-height:52px;border:none;border-radius:10px;font-size:17px;
+    font-weight:700;cursor:pointer;}
+  .btn-primary{background:var(--accent);color:var(--accent-ink);}
+  .btn-secondary{background:#e8edf1;color:var(--ink);margin-top:10px;}
+  .hidden{display:none;}
+  dl{margin:0;}
+  dt{font-weight:600;color:var(--sub);font-size:13px;margin-top:14px;}
+  dt:first-child{margin-top:0;}
+  dd{margin:2px 0 0;word-break:break-word;}
+  .transcript-box{max-height:240px;overflow:auto;background:#f7f9fa;border:1px solid var(--line);
+    border-radius:8px;padding:10px;white-space:pre-wrap;font-size:14px;}
+  .done-icon{font-size:40px;text-align:center;}
+  .done-text{text-align:center;}
+  .note{font-size:13px;color:var(--sub);margin-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>商談フィードバック提出</h1>
+  <p class="lead">商談の文字起こしを貼って提出すると、数分以内にあなたのChatworkへフィードバックと投稿文が届きます。</p>
+
+  <!-- 入力画面 -->
+  <section id="view-form" class="card">
+    <form id="feedback-form" novalidate>
+      <div class="field" id="f-member">
+        <label for="member">営業マン名<span class="req">必須</span></label>
+        <select id="member">
+          <option value="">選択してください</option>
+          <option>長谷川翔</option>
+          <option>高橋祐也</option>
+          <option>秋山竜星</option>
+        </select>
+        <p class="error-msg">営業マン名を選択してください。</p>
+      </div>
+
+      <div class="field" id="f-client">
+        <label for="client">相手の名前<span class="req">必須</span></label>
+        <input type="text" id="client" placeholder="例：山田太郎">
+        <p class="error-msg">相手の名前を入力してください。</p>
+      </div>
+
+      <div class="field" id="f-stage">
+        <label for="stage">ステージ<span class="req">必須</span></label>
+        <select id="stage">
+          <option value="">選択してください</option>
+          <option>1-2</option>
+          <option>2-最終</option>
+          <option>2-失注</option>
+          <option>最終-成約</option>
+          <option>最終-失注</option>
+          <option>その他</option>
+        </select>
+        <p class="error-msg">ステージを選択してください。</p>
+      </div>
+
+      <div class="field" id="f-meeting">
+        <label>面談日時（開始時刻）<span class="req">必須</span></label>
+        <input type="date" id="meeting-date" aria-label="面談日">
+        <div class="time-row">
+          <select id="meeting-hour" aria-label="開始時刻（時）"></select><span>時</span>
+          <select id="meeting-minute" aria-label="開始時刻（分）"></select><span>分</span>
+        </div>
+        <p class="error-msg">面談日時（日付と時刻）を選択してください。</p>
+      </div>
+
+      <div class="field" id="f-video">
+        <label for="video">アポ動画URL<span class="opt">任意</span></label>
+        <input type="url" id="video" placeholder="https://youtu.be/...">
+      </div>
+
+      <div class="field" id="f-transcript">
+        <label for="transcript">文字起こし<span class="req">必須</span></label>
+        <textarea id="transcript" maxlength="200000" placeholder="商談の文字起こしをここに貼り付けてください"></textarea>
+        <div class="counter"><span id="char-count">0</span> / 200,000文字</div>
+        <p class="error-msg">文字起こしを入力してください。</p>
+      </div>
+
+      <div class="field" id="f-impression">
+        <label for="impression">営業マンの初感<span class="req">必須</span></label>
+        <textarea id="impression" style="min-height:110px;" placeholder="面談を終えての初感・反省・気づきを書いてください"></textarea>
+        <p class="error-msg">営業マンの初感を入力してください。</p>
+      </div>
+
+      <div class="field" id="f-reaction">
+        <label for="reaction">本人の反応・温度感<span class="req">必須</span></label>
+        <textarea id="reaction" style="min-height:80px;" placeholder="相手の反応や温度感を書いてください"></textarea>
+        <p class="error-msg">本人の反応・温度感を入力してください。</p>
+      </div>
+
+      <div class="field" id="f-good">
+        <label for="good">できたこと<span class="req">必須</span></label>
+        <textarea id="good" style="min-height:80px;" placeholder="今回できたことを書いてください"></textarea>
+        <p class="error-msg">できたことを入力してください。</p>
+      </div>
+
+      <div class="field" id="f-bad">
+        <label for="bad">できなかったこと<span class="req">必須</span></label>
+        <textarea id="bad" style="min-height:80px;" placeholder="今回できなかったことを書いてください"></textarea>
+        <p class="error-msg">できなかったことを入力してください。</p>
+      </div>
+
+      <div class="field" id="f-next">
+        <label for="next">次回アクション<span class="req">必須</span></label>
+        <textarea id="next" style="min-height:80px;" placeholder="次回に向けたアクションを書いてください"></textarea>
+        <p class="error-msg">次回アクションを入力してください。</p>
+      </div>
+
+      <button type="submit" class="btn-primary">内容を確認する</button>
+    </form>
+  </section>
+
+  <!-- 確認画面 -->
+  <section id="view-confirm" class="card hidden">
+    <dl>
+      <dt>営業マン名</dt><dd id="c-member"></dd>
+      <dt>相手の名前</dt><dd id="c-client"></dd>
+      <dt>ステージ</dt><dd id="c-stage"></dd>
+      <dt>面談日時</dt><dd id="c-meeting"></dd>
+      <dt>アポ動画URL</dt><dd id="c-video"></dd>
+      <dt>文字起こし</dt>
+      <dd><div class="transcript-box" id="c-transcript"></div>
+      <div class="counter"><span id="c-count"></span>文字</div>
+      <div class="note hidden" id="c-split-note"></div></dd>
+      <dt>営業マンの初感</dt>
+      <dd><div class="transcript-box" id="c-impression"></div></dd>
+      <dt>本人の反応・温度感</dt>
+      <dd><div class="transcript-box" id="c-reaction"></div></dd>
+      <dt>できたこと</dt>
+      <dd><div class="transcript-box" id="c-good"></div></dd>
+      <dt>できなかったこと</dt>
+      <dd><div class="transcript-box" id="c-bad"></div></dd>
+      <dt>次回アクション</dt>
+      <dd><div class="transcript-box" id="c-next"></div></dd>
+    </dl>
+    <button id="btn-submit" class="btn-primary" style="margin-top:20px;">この内容で提出する</button>
+    <button id="btn-back" class="btn-secondary">戻って直す</button>
+  </section>
+
+  <!-- 完了画面 -->
+  <section id="view-done" class="card hidden">
+    <div class="done-icon">✅</div>
+    <p class="done-text"><strong>提出を受け付けました。</strong><br>
+    数分以内に、あなたのChatworkへフィードバックが届きます。</p>
+    <button id="btn-again" class="btn-secondary">続けて提出する</button>
+  </section>
+
+  <p class="note">※このページはテスト運用中です。</p>
+</div>
+
+<script>
+"use strict";
+/* ===== 設定（本接続のときにここを差し替える） ===== */
+const CONFIG = {
+  DEMO_MODE: false,              // 本接続済み（Googleフォームへ送信する）
+  SUBMIT_URL: "https://docs.google.com/forms/d/e/1FAIpQLSdXRA6VnFr6Ht6xtJzUVaw3RST5ymZy6GIcpsIEUXI6dsrjiQ/formResponse",
+  ENTRY_KEYS: {                  // フォーム各項目の entry ID（事前入力URLから取得・送信検証済み）
+    member: "entry.412813886",
+    client: "entry.347376986",
+    stage: "entry.293273496",
+    meeting: "entry.936684969",
+    video: "entry.630306718",
+    transcript: "entry.1266509356",
+    impression: "entry.1774572345",
+    reaction: "entry.102375426",
+    good: "entry.109853858",
+    bad: "entry.779224011",
+    next: "entry.564414771"
+  }
+};
+const MAX_CHARS = 200000;
+/* フォームの回答サイズ上限を避けるため、文字起こしはこの字数ごとに分割して送る */
+const CHUNK_SIZE = 15000;
+
+const $ = (id) => document.getElementById(id);
+const views = { form: $("view-form"), confirm: $("view-confirm"), done: $("view-done") };
+function show(name){
+  Object.entries(views).forEach(([k, el]) => el.classList.toggle("hidden", k !== name));
+  window.scrollTo(0, 0);
+}
+
+/* 面談日時：日付はカレンダー、時刻はプルダウン（時・分） */
+(function initMeetingInputs(){
+  const hourSel = $("meeting-hour");
+  const minSel = $("meeting-minute");
+  const pad = (n) => String(n).padStart(2, "0");
+  hourSel.innerHTML = '<option value="">--</option>' +
+    Array.from({length: 24}, (_, h) => `<option value="${pad(h)}">${h}</option>`).join("");
+  minSel.innerHTML = '<option value="">--</option>' +
+    Array.from({length: 12}, (_, i) => i * 5)
+      .map((m) => `<option value="${pad(m)}">${pad(m)}</option>`).join("");
+  const now = new Date();
+  $("meeting-date").value =
+    now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+})();
+
+const transcriptEl = $("transcript");
+transcriptEl.addEventListener("input", () => {
+  const n = transcriptEl.value.length;
+  $("char-count").textContent = n.toLocaleString("ja-JP");
+  $("char-count").parentElement.classList.toggle("over", n > MAX_CHARS);
+});
+
+function setInvalid(fieldId, invalid){
+  $("f-" + fieldId).classList.toggle("invalid", invalid);
+}
+function meetingValue(){
+  const d = $("meeting-date").value;
+  const h = $("meeting-hour").value;
+  const m = $("meeting-minute").value;
+  return (d && h !== "" && m !== "") ? d + "T" + h + ":" + m : "";
+}
+function values(){
+  return {
+    member: $("member").value.trim(),
+    client: $("client").value.trim(),
+    stage: $("stage").value.trim(),
+    meeting: meetingValue(),
+    video: $("video").value.trim(),
+    transcript: transcriptEl.value.trim(),
+    impression: $("impression").value.trim(),
+    reaction: $("reaction").value.trim(),
+    good: $("good").value.trim(),
+    bad: $("bad").value.trim(),
+    next: $("next").value.trim()
+  };
+}
+function validate(v){
+  let ok = true;
+  const checks = [
+    ["member", v.member !== ""],
+    ["client", v.client !== ""],
+    ["stage", v.stage !== ""],
+    ["meeting", v.meeting !== ""],
+    ["transcript", v.transcript !== "" && v.transcript.length <= MAX_CHARS],
+    ["impression", v.impression !== ""],
+    ["reaction", v.reaction !== ""],
+    ["good", v.good !== ""],
+    ["bad", v.bad !== ""],
+    ["next", v.next !== ""]
+  ];
+  checks.forEach(([id, valid]) => { setInvalid(id, !valid); if (!valid) ok = false; });
+  return ok;
+}
+function formatMeeting(iso){
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "/" + p(d.getMonth() + 1) + "/" + p(d.getDate()) +
+         " " + p(d.getHours()) + ":" + p(d.getMinutes());
+}
+
+let current = null;
+$("feedback-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const v = values();
+  if (!validate(v)) {
+    const firstInvalid = document.querySelector(".field.invalid");
+    if (firstInvalid) firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  current = v;
+  $("c-member").textContent = v.member;
+  $("c-client").textContent = v.client;
+  $("c-stage").textContent = v.stage;
+  $("c-meeting").textContent = formatMeeting(v.meeting);
+  $("c-video").textContent = v.video || "（なし）";
+  $("c-transcript").textContent = v.transcript;
+  $("c-count").textContent = v.transcript.length.toLocaleString("ja-JP");
+  const partCount = Math.ceil(v.transcript.length / CHUNK_SIZE);
+  const splitNote = $("c-split-note");
+  if (partCount > 1) {
+    splitNote.textContent = "※文字起こしが長いため、" + partCount + "回に分けて送信します。そのまま提出してください。";
+    splitNote.classList.remove("hidden");
+  } else {
+    splitNote.classList.add("hidden");
+  }
+  $("c-impression").textContent = v.impression;
+  $("c-reaction").textContent = v.reaction;
+  $("c-good").textContent = v.good;
+  $("c-bad").textContent = v.bad;
+  $("c-next").textContent = v.next;
+  show("confirm");
+});
+
+$("btn-back").addEventListener("click", () => show("form"));
+
+function buildBody(v, clientName, transcriptChunk, withDetails){
+  const [datePart, timePart] = v.meeting.split("T");
+  const hhmm = (timePart || "").slice(0, 5);
+  const body = new FormData();
+  body.append(CONFIG.ENTRY_KEYS.member, v.member);
+  body.append(CONFIG.ENTRY_KEYS.client, clientName);
+  body.append(CONFIG.ENTRY_KEYS.stage, v.stage);
+  // 面談日時：フォームの日時項目は「YYYY-MM-DD HH:MM」の1項目で受け取る。
+  // あわせて分割パラメータ（_year等）も送り、どちらの形式でも受理されるようにする（送信検証済み）。
+  body.append(CONFIG.ENTRY_KEYS.meeting, (datePart || "") + " " + hhmm);
+  const [yy, mo, dd] = (datePart || "").split("-");
+  const [hh, mi] = hhmm.split(":");
+  if (yy && mo && dd) {
+    body.append(CONFIG.ENTRY_KEYS.meeting + "_year", yy);
+    body.append(CONFIG.ENTRY_KEYS.meeting + "_month", String(parseInt(mo, 10)));
+    body.append(CONFIG.ENTRY_KEYS.meeting + "_day", String(parseInt(dd, 10)));
+  }
+  if (hh && mi) {
+    body.append(CONFIG.ENTRY_KEYS.meeting + "_hour", String(parseInt(hh, 10)));
+    body.append(CONFIG.ENTRY_KEYS.meeting + "_minute", String(parseInt(mi, 10)));
+  }
+  // 分割送信の2通目以降は、動画URLと所感系の項目を持たない（1通目の内容を使う）。
+  // フォームの必須チェックに触れないよう、所感系には目印の文言を入れる。
+  body.append(CONFIG.ENTRY_KEYS.video, withDetails ? v.video : "");
+  body.append(CONFIG.ENTRY_KEYS.transcript, transcriptChunk);
+  body.append(CONFIG.ENTRY_KEYS.impression, withDetails ? v.impression : "（分割送信・続き）");
+  body.append(CONFIG.ENTRY_KEYS.reaction, withDetails ? v.reaction : "（分割送信・続き）");
+  body.append(CONFIG.ENTRY_KEYS.good, withDetails ? v.good : "（分割送信・続き）");
+  body.append(CONFIG.ENTRY_KEYS.bad, withDetails ? v.bad : "（分割送信・続き）");
+  body.append(CONFIG.ENTRY_KEYS.next, withDetails ? v.next : "（分割送信・続き）");
+  return body;
+}
+
+$("btn-submit").addEventListener("click", async () => {
+  if (!current) return;
+  if (!CONFIG.DEMO_MODE) {
+    // フォームの回答サイズ上限を避けるため、長い文字起こしは分割して順番に送る。
+    // 2通目以降は相手の名前に【分割i/N】を付け、取り込み側で1件に繋ぎ直す。
+    const chunks = [];
+    for (let i = 0; i < current.transcript.length; i += CHUNK_SIZE) {
+      chunks.push(current.transcript.slice(i, i + CHUNK_SIZE));
+    }
+    const btn = $("btn-submit");
+    btn.disabled = true;
+    try {
+      for (let i = 0; i < chunks.length; i++) {
+        const clientName = chunks.length > 1
+          ? current.client + "【分割" + (i + 1) + "/" + chunks.length + "】"
+          : current.client;
+        btn.textContent = chunks.length > 1
+          ? "送信中…（" + (i + 1) + "/" + chunks.length + "）"
+          : "送信中…";
+        await fetch(CONFIG.SUBMIT_URL, { method: "POST", mode: "no-cors",
+          body: buildBody(current, clientName, chunks[i], i === 0) });
+        if (i < chunks.length - 1) await new Promise((r) => setTimeout(r, 800));
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "この内容で提出する";
+      alert("送信に失敗しました。通信環境を確認して、もう一度お試しください。");
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = "この内容で提出する";
+  }
+  show("done");
+});
+
+$("btn-again").addEventListener("click", () => {
+  $("feedback-form").reset();
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  $("meeting-date").value =
+    now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+  $("char-count").textContent = "0";
+  current = null;
+  show("form");
+});
+</script>
+</body>
+</html>
